@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
+import { jsPDF } from "jspdf";
 
 // ── VS Code / Developer Dark Theme ──────────────────────────────────────────
 // Palette: exactly what devs stare at all day
@@ -97,6 +98,198 @@ const PROJECTS = [
     },
   },
 ];
+
+const RESUME = {
+  name: "Khaleel Hanafie",
+  title: "Full-Stack Software Developer",
+  email: "khaleelhanafie188@gmail.com",
+  phone: "+27 61 646 4116",
+  github: "github.com/khaleel188",
+  linkedin: "linkedin.com/in/khaleel-hanafie-a857b040b",
+  linkedinUrl: "https://www.linkedin.com/in/khaleel-hanafie-a857b040b/",
+  location: "South Africa",
+  summary: "Software developer with 2+ years of experience building full-stack web and mobile applications, real-time systems, scalable backend services, and business platforms. Proficient across React, React Native, Node.js, Django, and cloud-native infrastructure.",
+  experience: [
+    {
+      period: "2023 – Present",
+      role: "Full-Stack Developer",
+      org: "Independent / Contract",
+      points: [
+        "Built production web and mobile applications with real-time features and role-based access control.",
+        "Delivered cross-platform solutions using React, React Native, Expo, Node.js, and Django.",
+        "Designed scalable architectures with Redis, Docker, Kubernetes, and PostgreSQL.",
+      ],
+    },
+    {
+      period: "2023",
+      role: "Software Developer",
+      org: "Project Work",
+      points: [
+        "Developed work tracking, education, and invoicing platforms end-to-end.",
+        "Implemented JWT authentication, Socket.IO live updates, and multi-portal workflows.",
+      ],
+    },
+  ],
+  projects: PROJECTS.map(p => ({
+    title: p.title,
+    desc: p.desc,
+    tech: p.tech.slice(0, 6).join(" · "),
+  })),
+};
+
+function downloadResumePdf() {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const w = doc.internal.pageSize.getWidth();
+  const m = 16;
+  const contentW = w - m * 2;
+  let y = m;
+
+  const rule = (yy) => {
+    doc.setDrawColor(220, 220, 220);
+    doc.line(m, yy, w - m, yy);
+  };
+
+  const ensureSpace = (need) => {
+    if (y + need > 285) { doc.addPage(); y = m; }
+  };
+
+  const sectionTitle = (title) => {
+    ensureSpace(14);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(30, 30, 30);
+    doc.text(title.toUpperCase(), m, y);
+    y += 2;
+    rule(y);
+    y += 6;
+  };
+
+  const bodyText = (text, indent = 0) => {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(60, 60, 60);
+    const lines = doc.splitTextToSize(text, contentW - indent);
+    ensureSpace(lines.length * 5 + 2);
+    doc.text(lines, m + indent, y);
+    y += lines.length * 5 + 3;
+  };
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(24);
+  doc.setTextColor(20, 20, 20);
+  doc.text(RESUME.name, m, y);
+  y += 9;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(12);
+  doc.setTextColor(0, 120, 100);
+  doc.text(RESUME.title, m, y);
+  y += 7;
+
+  doc.setFontSize(9);
+  doc.setTextColor(90, 90, 90);
+  doc.text(`${RESUME.email}  |  ${RESUME.phone}  |  ${RESUME.github}  |  ${RESUME.linkedin}`, m, y);
+  y += 8;
+  rule(y);
+  y += 8;
+
+  sectionTitle("Professional Summary");
+  bodyText(RESUME.summary);
+
+  sectionTitle("Experience");
+  RESUME.experience.forEach((job) => {
+    ensureSpace(28);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10.5);
+    doc.setTextColor(30, 30, 30);
+    doc.text(job.role, m, y);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(0, 120, 100);
+    doc.text(job.period, w - m, y, { align: "right" });
+    y += 5;
+    doc.setFontSize(9.5);
+    doc.setTextColor(100, 100, 100);
+    doc.text(job.org, m, y);
+    y += 6;
+    job.points.forEach((pt) => {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+      doc.setTextColor(60, 60, 60);
+      const lines = doc.splitTextToSize(`• ${pt}`, contentW - 4);
+      ensureSpace(lines.length * 4.8 + 1);
+      doc.text(lines, m + 2, y);
+      y += lines.length * 4.8 + 1.5;
+    });
+    y += 3;
+  });
+
+  sectionTitle("Featured Projects");
+  RESUME.projects.forEach((p) => {
+    ensureSpace(16);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(30, 30, 30);
+    doc.text(p.title, m, y);
+    y += 5;
+    bodyText(p.desc, 0);
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8.5);
+    doc.setTextColor(110, 110, 110);
+    ensureSpace(5);
+    doc.text(p.tech, m, y);
+    y += 7;
+  });
+
+  sectionTitle("Technical Skills");
+  SKILLS.forEach((g) => {
+    ensureSpace(10);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.setTextColor(30, 30, 30);
+    doc.text(`${g.category}:`, m, y);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(60, 60, 60);
+    doc.text(g.items.join(", "), m + 28, y);
+    y += 6;
+  });
+
+  doc.save("Khaleel-Hanafie-Resume.pdf");
+}
+
+function DownloadResumeButton({ full, style }) {
+  const [loading, setLoading] = useState(false);
+  const handleClick = () => {
+    setLoading(true);
+    try { downloadResumePdf(); }
+    finally { setTimeout(() => setLoading(false), 600); }
+  };
+  return (
+    <motion.button
+      type="button"
+      whileHover={{ scale: 1.02, y: -1 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={handleClick}
+      disabled={loading}
+      style={{
+        display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
+        width: full ? "100%" : "auto",
+        padding: full ? "13px 20px" : "9px 18px",
+        borderRadius: 6,
+        background: loading ? T.elevated : T.cyan + "18",
+        border: `1px solid ${T.cyan}55`,
+        color: T.cyan,
+        fontFamily: "monospace",
+        fontSize: full ? 13 : 12,
+        fontWeight: 700,
+        cursor: loading ? "wait" : "pointer",
+        opacity: loading ? 0.7 : 1,
+        ...style,
+      }}
+    >
+      {loading ? "// generating..." : full ? "↓  download resume.pdf" : "resume.download()"}
+    </motion.button>
+  );
+}
 
 const STATS = [
   { v: "2+",   label: "Years Experience",  color: T.cyan   },
@@ -276,11 +469,13 @@ function Hero() {
 
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             {[
-              { label: "view projects()",  color: T.cyan,   onClick: () => document.getElementById("projects")?.scrollIntoView({ behavior: "smooth" }) },
-              { label: "contact.me()",     color: T.yellow, onClick: () => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" }) },
-              { label: "resume.download()",color: T.purple, onClick: () => document.getElementById("resume")?.scrollIntoView({ behavior: "smooth" }) },
+              { label: "view projects()",   color: T.cyan,   action: "projects" },
+              { label: "contact.me()",      color: T.yellow, action: "contact" },
+              { label: "resume.download()", color: T.purple, action: "download" },
             ].map((b, i) => (
-              <motion.button key={i} whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }} onClick={b.onClick} style={{
+              <motion.button key={i} whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}
+                onClick={() => b.action === "download" ? downloadResumePdf() : document.getElementById(b.action)?.scrollIntoView({ behavior: "smooth" })}
+                style={{
                 background: i === 0 ? b.color + "18" : "transparent",
                 color: b.color, border: `1px solid ${b.color}50`,
                 padding: "9px 18px", borderRadius: 5, fontFamily: "monospace", fontSize: 12, fontWeight: 700, cursor: "pointer",
@@ -429,8 +624,9 @@ function VideoModal({ p, videoSrc, onClose }) {
         backdropFilter: "blur(10px)",
         WebkitBackdropFilter: "blur(10px)",
         display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "clamp(12px, 3vw, 28px)",
+        padding: "max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left))",
       }}
+      className="modal-overlay modal-overlay--video"
     >
       <motion.div
         initial={{ scale: 0.96, y: 16 }}
@@ -438,9 +634,10 @@ function VideoModal({ p, videoSrc, onClose }) {
         exit={{ scale: 0.96, y: 16 }}
         transition={{ duration: 0.25, ease: "easeOut" }}
         onClick={e => e.stopPropagation()}
+        className="modal-panel modal-panel--video"
         style={{
           width: "min(960px, 100%)",
-          maxHeight: "calc(100vh - 24px)",
+          maxHeight: "calc(100dvh - 24px)",
           display: "flex",
           flexDirection: "column",
           borderRadius: 10,
@@ -515,26 +712,28 @@ function VideoModal({ p, videoSrc, onClose }) {
 
 // ── Project Card ──────────────────────────────────────────────────────────────
 function ProjectMediaPreview({ item, p, poster, onPlayVideo, large }) {
-  const h = large ? "auto" : "100%";
   if (item.type === "image") {
     return (
       <img
+        className={large ? "media-preview-img media-preview-img--large" : "media-preview-img"}
         src={item.src}
         alt={`${p.title} — ${item.label}`}
-        style={{ width: "100%", height: h, aspectRatio: large ? "16/9" : undefined, objectFit: "cover", display: "block" }}
+        loading="lazy"
+        decoding="async"
       />
     );
   }
   return (
     <button
       type="button"
+      className={large ? "media-preview-video media-preview-video--large" : "media-preview-video"}
       onClick={onPlayVideo}
-      style={{ position: "relative", width: "100%", height: h, aspectRatio: large ? "16/9" : undefined, padding: 0, border: "none", cursor: "pointer", background: "#0a0a0a", display: "block" }}
+      aria-label={`Play ${p.title} demo video`}
     >
-      {poster && <img src={poster} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.45, display: "block" }} />}
-      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(0,0,0,0.35)" }}>
-        <span style={{ width: large ? 56 : 40, height: large ? 56 : 40, borderRadius: "50%", background: p.color + "dd", display: "flex", alignItems: "center", justifyContent: "center", fontSize: large ? 20 : 14, color: T.bg }}>▶</span>
-        {large && <span style={{ fontFamily: "monospace", fontSize: 11, color: T.textBright }}>// {item.label}</span>}
+      {poster && <img src={poster} alt="" className="media-preview-video-poster" loading="lazy" />}
+      <div className="media-preview-video-overlay">
+        <span className="media-play-btn" style={{ background: p.color + "dd" }}>▶</span>
+        {large && <span className="media-preview-video-label">// {item.label}</span>}
       </div>
     </button>
   );
@@ -542,32 +741,35 @@ function ProjectMediaPreview({ item, p, poster, onPlayVideo, large }) {
 
 function ProjectMediaStrip({ items, active, color, poster, onSelect }) {
   return (
-    <div className="media-strip">
-      {items.map((item, i) => (
-        <button
-          key={item.src}
-          type="button"
-          onClick={() => onSelect(i)}
-          title={item.label}
-          style={{
-            padding: 0, flexShrink: 0, width: 72, height: 52,
-            border: `2px solid ${active === i ? color : T.border}`,
-            borderRadius: 5, overflow: "hidden", cursor: "pointer", background: T.bg,
-            position: "relative",
-          }}
-        >
-          {item.type === "image" ? (
-            <img src={item.src} alt={item.label} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-          ) : (
-            <>
-              {poster && <img src={poster} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.4, display: "block" }} />}
-              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.45)" }}>
-                <span style={{ fontSize: 14, color: color }}>▶</span>
-              </div>
-            </>
-          )}
-        </button>
-      ))}
+    <div className="media-strip-wrap">
+      <div className="media-strip-fade media-strip-fade--left" aria-hidden />
+      <div className="media-strip" role="tablist" aria-label="Project media">
+        {items.map((item, i) => (
+          <button
+            key={item.src}
+            type="button"
+            role="tab"
+            aria-selected={active === i}
+            aria-label={item.type === "video" ? `Play ${item.label} video` : `View ${item.label}`}
+            onClick={() => onSelect(i)}
+            className={`media-thumb${active === i ? " media-thumb--active" : ""}`}
+            style={{ "--thumb-accent": color }}
+          >
+            {item.type === "image" ? (
+              <img src={item.src} alt="" className="media-thumb-img" loading="lazy" />
+            ) : (
+              <>
+                {poster && <img src={poster} alt="" className="media-thumb-img media-thumb-img--dim" loading="lazy" />}
+                <div className="media-thumb-video-badge">
+                  <span>▶</span>
+                  <span className="media-thumb-label">video</span>
+                </div>
+              </>
+            )}
+          </button>
+        ))}
+      </div>
+      <div className="media-strip-fade media-strip-fade--right" aria-hidden />
     </div>
   );
 }
@@ -577,16 +779,15 @@ function ProjectMediaGallery({ p, active, onSelect, onPlayVideo, large }) {
   const poster = projectPoster(p);
   const item = p.media.items[active] ?? p.media.items[0];
   return (
-    <div>
-      <div style={{ borderRadius: large ? 6 : 0, overflow: "hidden", border: large ? `1px solid ${T.border}` : "none", marginBottom: large ? 10 : 0, background: T.bg }}>
+    <div className="media-gallery">
+      <div className={`media-gallery-frame${large ? " media-gallery-frame--large" : ""}`}>
         <ProjectMediaPreview item={item} p={p} poster={poster} onPlayVideo={onPlayVideo} large={large} />
       </div>
       <ProjectMediaStrip items={p.media.items} active={active} color={p.color} poster={poster} onSelect={onSelect} />
-      {large && (
-        <p style={{ fontFamily: "monospace", fontSize: 10, color: T.faint, marginTop: 8, textAlign: "center" }}>
-          // {item.label} · {active + 1}/{p.media.items.length}
-        </p>
-      )}
+      <p className="media-gallery-meta">
+        // {item.label} · {active + 1}/{p.media.items.length}
+        {item.type === "video" ? " · tap ▶ to play" : ""}
+      </p>
     </div>
   );
 }
@@ -612,8 +813,8 @@ function ProjectCard({ p }) {
       <FadeUp>
         <motion.div whileHover={{ y: -6, borderColor: p.color + "55" }} style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 8, overflow: "hidden", height: "100%", display: "flex", flexDirection: "column", transition: "border-color 0.2s", borderTop: `2px solid ${p.color}` }}>
           {p.media?.items?.length > 0 && (
-            <div style={{ borderBottom: `1px solid ${T.border}` }}>
-              <div className="project-cover" style={{ position: "relative", aspectRatio: "16/9", background: T.bg }}>
+            <div className="project-media-block">
+              <div className="project-cover media-gallery-frame">
                 <ProjectMediaPreview
                   item={p.media.items[activeMedia]}
                   p={p}
@@ -621,7 +822,7 @@ function ProjectCard({ p }) {
                   onPlayVideo={playVideo}
                 />
               </div>
-              <div style={{ padding: "8px 10px", background: T.bg }}>
+              <div className="project-media-strip-bar">
                 <ProjectMediaStrip items={p.media.items} active={activeMedia} color={p.color} poster={projectPoster(p)} onSelect={selectMedia} />
               </div>
             </div>
@@ -637,7 +838,7 @@ function ProjectCard({ p }) {
           {/* features */}
           <div style={{ padding: "0 22px", flex: 1 }}>
             <p style={{ fontFamily: "monospace", fontSize: 10, color: T.green, marginBottom: 10 }}>// features</p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 12px", marginBottom: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "4px 12px", marginBottom: 16 }}>
               {p.features.map((f, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 5, fontFamily: "monospace", fontSize: 11, color: T.muted }}>
                   <span style={{ color: p.color, flexShrink: 0 }}>›</span>{f}
@@ -669,10 +870,8 @@ function ProjectCard({ p }) {
       {/* Details modal */}
       <AnimatePresence>
         {details && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setDetails(false)}
-            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-            <motion.div initial={{ scale: 0.93, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.93 }} onClick={e => e.stopPropagation()}
-              style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 8, padding: 32, maxWidth: 640, width: "100%", maxHeight: "82vh", overflowY: "auto" }}>
+          <motion.div className="modal-overlay modal-overlay--details" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setDetails(false)}>
+            <motion.div className="modal-panel modal-panel--details" initial={{ scale: 0.93, y: 16 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.93 }} onClick={e => e.stopPropagation()}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
                 <h3 style={{ fontFamily: "monospace", fontWeight: 700, fontSize: 16, color: p.color, margin: 0 }}>{p.title}</h3>
                 <button onClick={() => setDetails(false)} style={{ background: T.elevated, border: `1px solid ${T.border}`, borderRadius: 4, padding: "4px 10px", cursor: "pointer", color: T.muted, fontFamily: "monospace" }}>×</button>
@@ -753,7 +952,7 @@ function Projects() {
     <Sec id="projects" alt>
       <Wrap>
         <SecHead title="Featured Projects" sub="what I've built — full-stack" />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 320px), 1fr))", gap: 20 }}>
           {PROJECTS.map(p => <ProjectCard key={p.id} p={p} />)}
         </div>
       </Wrap>
@@ -821,50 +1020,144 @@ function Architecture() {
 
 // ── Resume ────────────────────────────────────────────────────────────────────
 function Resume() {
-  const exp = [
-    { period: "2023 – Present", role: "Full-Stack Developer", org: "Independent / Contract", desc: "Building production web and mobile applications — real-time platforms, enterprise tools, and cross-platform mobile apps." },
-    { period: "2023", role: "Software Developer", org: "Project Work", desc: "Developed multiple large-scale applications including work tracking, education, and invoicing platforms." },
+  const contactItems = [
+    { label: "email", value: RESUME.email, href: `mailto:${RESUME.email}`, color: T.ltBlue },
+    { label: "phone", value: RESUME.phone, href: `tel:${RESUME.phone.replace(/\s/g, "")}`, color: T.yellow },
+    { label: "github", value: RESUME.github, href: `https://${RESUME.github}`, color: T.cyan },
+    { label: "linkedin", value: RESUME.linkedin, href: RESUME.linkedinUrl, color: T.blue },
+    { label: "location", value: RESUME.location, color: T.purple },
   ];
 
   return (
     <Sec id="resume" alt>
       <Wrap>
-        <SecHead title="Resume" sub="experience & skills" />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 28 }}>
-          <FadeUp>
-            <div>
-              <p style={{ fontFamily: "monospace", fontSize: 10, color: T.green, marginBottom: 16 }}>// experience[]</p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {exp.map((e, i) => (
-                  <div key={i} style={{ background: T.surface, border: `1px solid ${T.border}`, borderLeft: `3px solid ${T.cyan}`, borderRadius: "0 8px 8px 0", padding: "18px 20px" }}>
-                    <div style={{ fontFamily: "monospace", fontSize: 10, color: T.cyan, marginBottom: 4 }}>{e.period}</div>
-                    <div style={{ fontFamily: "monospace", fontSize: 13, fontWeight: 700, color: T.textBright, marginBottom: 2 }}>{e.role}</div>
-                    <div style={{ fontFamily: "monospace", fontSize: 11, color: T.muted, marginBottom: 8 }}>{e.org}</div>
-                    <div style={{ fontFamily: "monospace", fontSize: 11, color: T.muted, lineHeight: 1.7 }}>{e.desc}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </FadeUp>
+        <SecHead title="Resume" sub="experience · skills · download" />
 
-          <FadeUp delay={0.12}>
-            <div>
-              <p style={{ fontFamily: "monospace", fontSize: 10, color: T.green, marginBottom: 16 }}>// skills[]</p>
-              <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 8, padding: 22, marginBottom: 18 }}>
-                {SKILLS.map((g, i) => (
-                  <div key={i} style={{ marginBottom: i < SKILLS.length - 1 ? 14 : 0 }}>
-                    <div style={{ fontFamily: "monospace", fontSize: 10, color: g.color, fontWeight: 700, marginBottom: 7 }}>{g.category}</div>
-                    <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                      {g.items.map((item, ii) => <Chip key={ii} label={item} color={g.color} />)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <motion.button whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.97 }} style={{ width: "100%", padding: 14, borderRadius: 6, background: T.cyan + "18", border: `1px solid ${T.cyan}50`, color: T.cyan, fontFamily: "monospace", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-                resume.download() →
-              </motion.button>
+        {/* Profile header card */}
+        <FadeUp>
+          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 10, overflow: "hidden", marginBottom: 28 }}>
+            <div style={{ background: T.sidebar, padding: "10px 18px", display: "flex", alignItems: "center", gap: 8, borderBottom: `1px solid ${T.border}` }}>
+              <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#f44747" }} />
+              <span style={{ width: 10, height: 10, borderRadius: "50%", background: T.yellow }} />
+              <span style={{ width: 10, height: 10, borderRadius: "50%", background: T.cyan }} />
+              <span style={{ fontFamily: "monospace", fontSize: 11, color: T.muted, marginLeft: 6 }}>Khaleel-Hanafie-Resume.pdf</span>
             </div>
-          </FadeUp>
+            <div className="resume-header-grid" style={{ padding: "28px 28px 24px", display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 24, alignItems: "center" }}>
+              <div style={{ width: 72, height: 72, borderRadius: 10, background: `linear-gradient(135deg, ${T.cyan}33, ${T.purple}33)`, border: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "monospace", fontSize: 22, fontWeight: 700, color: T.cyan, flexShrink: 0 }}>
+                KH
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <h3 style={{ fontFamily: "monospace", fontSize: "clamp(1.2rem,2.5vw,1.6rem)", fontWeight: 700, color: T.textBright, margin: "0 0 4px" }}>{RESUME.name}</h3>
+                <p style={{ fontFamily: "monospace", fontSize: 13, color: T.cyan, margin: "0 0 14px" }}>{RESUME.title}</p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {contactItems.map((c, i) => (
+                    c.href ? (
+                      <a key={i} href={c.href} target="_blank" rel="noopener noreferrer" style={{ fontFamily: "monospace", fontSize: 10, color: c.color, background: c.color + "12", border: `1px solid ${c.color}35`, borderRadius: 4, padding: "4px 10px", textDecoration: "none" }}>
+                        {c.label}: {c.value}
+                      </a>
+                    ) : (
+                      <span key={i} style={{ fontFamily: "monospace", fontSize: 10, color: c.color, background: c.color + "12", border: `1px solid ${c.color}35`, borderRadius: 4, padding: "4px 10px" }}>
+                        {c.label}: {c.value}
+                      </span>
+                    )
+                  ))}
+                </div>
+              </div>
+              <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", gap: 8, alignItems: "stretch" }}>
+                <DownloadResumeButton />
+                <button type="button" onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })} style={{ padding: "9px 18px", borderRadius: 6, background: "transparent", border: `1px solid ${T.border}`, color: T.muted, fontFamily: "monospace", fontSize: 11, cursor: "pointer" }}>
+                  contact.me()
+                </button>
+              </div>
+            </div>
+          </div>
+        </FadeUp>
+
+        <div className="resume-columns" style={{ display: "grid", gridTemplateColumns: "minmax(0,1.4fr) minmax(0,1fr)", gap: 24 }}>
+          {/* Left column */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+            <FadeUp delay={0.05}>
+              <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 8, padding: 24 }}>
+                <p style={{ fontFamily: "monospace", fontSize: 10, color: T.green, marginBottom: 12 }}>// professional_summary</p>
+                <p style={{ fontFamily: "monospace", fontSize: 13, color: T.text, lineHeight: 1.85, margin: 0 }}>{RESUME.summary}</p>
+              </div>
+            </FadeUp>
+
+            <FadeUp delay={0.1}>
+              <div>
+                <p style={{ fontFamily: "monospace", fontSize: 10, color: T.green, marginBottom: 14 }}>// experience[]</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {RESUME.experience.map((e, i) => (
+                    <div key={i} style={{ background: T.surface, border: `1px solid ${T.border}`, borderLeft: `3px solid ${T.cyan}`, borderRadius: "0 8px 8px 0", padding: "20px 22px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 6, flexWrap: "wrap" }}>
+                        <div style={{ fontFamily: "monospace", fontSize: 14, fontWeight: 700, color: T.textBright }}>{e.role}</div>
+                        <div style={{ fontFamily: "monospace", fontSize: 10, color: T.cyan, background: T.cyan + "12", border: `1px solid ${T.cyan}30`, borderRadius: 4, padding: "3px 8px", flexShrink: 0 }}>{e.period}</div>
+                      </div>
+                      <div style={{ fontFamily: "monospace", fontSize: 11, color: T.muted, marginBottom: 12 }}>{e.org}</div>
+                      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 7 }}>
+                        {e.points.map((pt, pi) => (
+                          <li key={pi} style={{ fontFamily: "monospace", fontSize: 11, color: T.muted, lineHeight: 1.65, display: "flex", gap: 8 }}>
+                            <span style={{ color: T.cyan, flexShrink: 0 }}>›</span>{pt}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </FadeUp>
+
+            <FadeUp delay={0.15}>
+              <div>
+                <p style={{ fontFamily: "monospace", fontSize: 10, color: T.green, marginBottom: 14 }}>// featured_projects[]</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {RESUME.projects.map((p, i) => (
+                    <div key={i} style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 8, padding: "16px 18px" }}>
+                      <div style={{ fontFamily: "monospace", fontSize: 13, fontWeight: 700, color: PROJECTS[i]?.color ?? T.ltBlue, marginBottom: 4 }}>{p.title}</div>
+                      <div style={{ fontFamily: "monospace", fontSize: 11, color: T.muted, lineHeight: 1.65, marginBottom: 8 }}>{p.desc}</div>
+                      <div style={{ fontFamily: "monospace", fontSize: 10, color: T.faint }}>{p.tech}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </FadeUp>
+          </div>
+
+          {/* Right column */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+            <FadeUp delay={0.08}>
+              <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 8, padding: 24, position: "sticky", top: 80 }}>
+                <p style={{ fontFamily: "monospace", fontSize: 10, color: T.green, marginBottom: 16 }}>// technical_skills[]</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {SKILLS.map((g, i) => (
+                    <div key={i}>
+                      <div style={{ fontFamily: "monospace", fontSize: 10, color: g.color, fontWeight: 700, letterSpacing: "0.08em", marginBottom: 8 }}>{g.category.toUpperCase()}</div>
+                      <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                        {g.items.map((item, ii) => <Chip key={ii} label={item} color={g.color} />)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ marginTop: 24, paddingTop: 20, borderTop: `1px solid ${T.border}` }}>
+                  <p style={{ fontFamily: "monospace", fontSize: 10, color: T.green, marginBottom: 12 }}>// highlights</p>
+                  {STATS.map((s, i) => (
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: i < STATS.length - 1 ? `1px solid ${T.border}` : "none" }}>
+                      <span style={{ fontFamily: "monospace", fontSize: 11, color: T.muted }}>{s.label}</span>
+                      <span style={{ fontFamily: "monospace", fontSize: 12, fontWeight: 700, color: s.color }}>{s.v}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ marginTop: 24 }}>
+                  <DownloadResumeButton full />
+                  <p style={{ fontFamily: "monospace", fontSize: 9, color: T.faint, textAlign: "center", marginTop: 10 }}>
+                    PDF · A4 · print-ready
+                  </p>
+                </div>
+              </div>
+            </FadeUp>
+          </div>
         </div>
       </Wrap>
     </Sec>
@@ -879,7 +1172,8 @@ function Contact() {
   const links = [
     { label: "email",  value: "khaleelhanafie188@gmail.com",  color: T.ltBlue, href: "mailto:khaleelhanafie188@gmail.com" },
     { label: "phone",  value: "+27 61 646 4116",             color: T.yellow, href: "tel:+27616464116" },
-    { label: "github", value: "github.com/khaleel188",       color: T.cyan,   href: "https://github.com/khaleel188" },
+    { label: "github",   value: "github.com/khaleel188",                         color: T.cyan,   href: "https://github.com/khaleel188" },
+    { label: "linkedin", value: "linkedin.com/in/khaleel-hanafie-a857b040b",     color: T.blue,   href: "https://www.linkedin.com/in/khaleel-hanafie-a857b040b/" },
   ];
 
   const inputStyle = { width: "100%", padding: "9px 12px", borderRadius: 4, background: T.input, border: `1px solid ${T.border}`, color: T.text, fontFamily: "monospace", fontSize: 12, outline: "none", boxSizing: "border-box" };
@@ -996,17 +1290,207 @@ export default function App() {
         textarea, input { font-family: inherit; color: #cccccc; }
         textarea::placeholder, input::placeholder { color: #5a5a5a; }
         .nav-mobile { display: none; }
-        .project-cover:hover .project-cover-play { opacity: 1 !important; }
+
+        /* ── Project media ── */
+        .project-media-block {
+          border-bottom: 1px solid #3e3e42;
+          background: #0d0d0d;
+        }
+        .project-media-strip-bar {
+          padding: 10px 12px 12px;
+          background: #1e1e1e;
+        }
+        .media-gallery { width: 100%; }
+        .media-gallery-frame {
+          position: relative;
+          width: 100%;
+          aspect-ratio: 16 / 9;
+          min-height: 160px;
+          background: #0a0a0a;
+          overflow: hidden;
+        }
+        .media-gallery-frame--large {
+          border-radius: 8px;
+          border: 1px solid #3e3e42;
+          margin-bottom: 12px;
+        }
+        .media-preview-img,
+        .media-preview-video {
+          width: 100%;
+          height: 100%;
+          display: block;
+        }
+        .media-preview-img {
+          object-fit: contain;
+          object-position: center;
+          background: #0a0a0a;
+        }
+        .media-preview-video {
+          position: relative;
+          padding: 0;
+          border: none;
+          cursor: pointer;
+          background: #0a0a0a;
+        }
+        .media-preview-video-poster {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          object-position: center;
+          opacity: 0.5;
+          display: block;
+        }
+        .media-preview-video-overlay {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          background: rgba(0,0,0,0.4);
+        }
+        .media-play-btn {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+          color: #1e1e1e;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.45);
+        }
+        .media-preview-video--large .media-play-btn {
+          width: 56px;
+          height: 56px;
+          font-size: 20px;
+        }
+        .media-preview-video-label {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 11px;
+          color: #d4d4d4;
+        }
+        .media-gallery-meta {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 10px;
+          color: #5a5a5a;
+          text-align: center;
+          margin: 10px 0 0;
+          padding: 0 4px;
+        }
+        .media-strip-wrap {
+          position: relative;
+        }
         .media-strip {
           display: flex;
-          gap: 6px;
+          gap: 8px;
           overflow-x: auto;
-          padding-bottom: 2px;
+          overflow-y: hidden;
+          -webkit-overflow-scrolling: touch;
+          touch-action: pan-x;
+          scroll-snap-type: x mandatory;
+          scroll-padding: 12px;
+          padding: 4px 12px 6px;
           scrollbar-width: thin;
           scrollbar-color: #424242 transparent;
         }
-        .media-strip::-webkit-scrollbar { height: 4px; }
+        .media-strip::-webkit-scrollbar { height: 5px; }
         .media-strip::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+        .media-strip-fade {
+          position: absolute;
+          top: 0;
+          bottom: 6px;
+          width: 20px;
+          pointer-events: none;
+          z-index: 1;
+        }
+        .media-strip-fade--left {
+          left: 0;
+          background: linear-gradient(90deg, #1e1e1e 0%, transparent 100%);
+        }
+        .media-strip-fade--right {
+          right: 0;
+          background: linear-gradient(270deg, #1e1e1e 0%, transparent 100%);
+        }
+        .project-media-strip-bar .media-strip-fade--left {
+          background: linear-gradient(90deg, #1e1e1e 0%, transparent 100%);
+        }
+        .project-media-strip-bar .media-strip-fade--right {
+          background: linear-gradient(270deg, #1e1e1e 0%, transparent 100%);
+        }
+        .media-thumb {
+          flex: 0 0 auto;
+          scroll-snap-align: start;
+          width: 88px;
+          height: 58px;
+          min-width: 88px;
+          padding: 0;
+          border: 2px solid #3e3e42;
+          border-radius: 6px;
+          overflow: hidden;
+          cursor: pointer;
+          background: #0a0a0a;
+          position: relative;
+          transition: border-color 0.15s, transform 0.15s;
+          -webkit-tap-highlight-color: transparent;
+        }
+        .media-thumb:active { transform: scale(0.96); }
+        .media-thumb--active {
+          border-color: var(--thumb-accent, #4ec9b0);
+          box-shadow: 0 0 0 1px color-mix(in srgb, var(--thumb-accent, #4ec9b0) 40%, transparent);
+        }
+        .media-thumb-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: top center;
+          display: block;
+        }
+        .media-thumb-img--dim { opacity: 0.35; }
+        .media-thumb-video-badge {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 2px;
+          background: rgba(0,0,0,0.5);
+          font-size: 14px;
+          color: var(--thumb-accent, #4ec9b0);
+        }
+        .media-thumb-label {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 8px;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          opacity: 0.9;
+        }
+
+        /* ── Modals ── */
+        .modal-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 2000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+        }
+        .modal-overlay--details { background: rgba(0,0,0,0.8); }
+        .modal-panel--details {
+          background: #2d2d2d;
+          border: 1px solid #3e3e42;
+          border-radius: 10px;
+          padding: 28px;
+          max-width: 680px;
+          width: 100%;
+          max-height: min(90dvh, 900px);
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
         .video-stage-wrap {
           flex: 1;
           min-height: 0;
@@ -1017,8 +1501,8 @@ export default function App() {
           padding: clamp(8px, 2vw, 16px);
         }
         .video-stage {
-          width: min(100%, calc((100vh - 140px) * 16 / 9));
-          max-height: calc(100vh - 140px);
+          width: min(100%, calc((100dvh - 140px) * 16 / 9));
+          max-height: calc(100dvh - 140px);
           aspect-ratio: 16 / 9;
           background: #000;
           border-radius: 6px;
@@ -1038,13 +1522,60 @@ export default function App() {
           border-radius: 0;
           background: linear-gradient(transparent, rgba(0,0,0,0.75));
         }
-        @media(max-width:680px) {
+
+        @media (max-width: 680px) {
+          .media-gallery-frame { min-height: 200px; aspect-ratio: 16 / 10; }
+          .media-thumb {
+            width: 76px;
+            height: 52px;
+            min-width: 76px;
+            min-height: 48px;
+          }
+          .media-play-btn { width: 48px; height: 48px; }
+          .project-media-strip-bar { padding: 10px 8px 12px; }
+          .modal-overlay--details {
+            align-items: flex-end;
+            padding: 0;
+          }
+          .modal-panel--details {
+            max-height: 92dvh;
+            border-radius: 12px 12px 0 0;
+            padding: 20px 16px max(20px, env(safe-area-inset-bottom));
+            border-bottom: none;
+          }
+          .modal-overlay--video { padding: 0; align-items: stretch; }
+          .modal-panel--video {
+            width: 100% !important;
+            max-height: 100dvh !important;
+            height: 100dvh;
+            border-radius: 0 !important;
+            border: none !important;
+          }
+          .video-stage-wrap { padding: 8px; flex: 1; }
           .video-stage {
             width: 100%;
-            max-height: calc(100vh - 120px);
+            max-height: none;
+            flex: 1;
+            aspect-ratio: auto;
+            min-height: 0;
+            border-radius: 4px;
           }
+          .video-player { max-height: calc(100dvh - 100px); }
+          .resume-header-grid {
+            grid-template-columns: 1fr !important;
+            text-align: center;
+          }
+          .resume-header-grid > div:first-child { margin: 0 auto; }
+          .resume-header-grid > div:last-child { width: 100%; }
+          .resume-columns { grid-template-columns: 1fr !important; }
           .nav-desktop { display: none !important; }
           .nav-mobile { display: block !important; }
+        }
+
+        @media (max-width: 400px) {
+          .media-gallery-frame { min-height: 180px; }
+          .media-thumb { width: 68px; height: 48px; min-width: 68px; }
+          .media-gallery-meta { font-size: 9px; }
         }
       `}</style>
       <Nav />
